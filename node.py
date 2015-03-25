@@ -17,10 +17,10 @@ class Node(object):
     def __init__(self, nid):
         self.enabled = True
         self.nid = nid
-        self.nbrs = []
+        self.neighbors = []
         self.incoming = []
         self.outgoing = []
-        self.oldoutgoing = []
+        self.old_outgoing = []
     
     def reset(self):
         self.enabled = True
@@ -30,42 +30,42 @@ class Node(object):
     
     def enable(self):
         self.enabled = True
-        for n in self.nbrs:
+        for n in self.neighbors:
             # don't call enable() as it will recursively enable entire graph
             n.enabled = True
     
-    def nextStep(self):
+    def next_step(self):
         """ Used to have this line in prepMessages
             but it didn't work?
         """
-        self.oldoutgoing = self.outgoing[:]
+        self.old_outgoing = self.outgoing[:]
     
-    def normalizeMessages(self):
+    def normalize_messages(self):
         """ Normalize to sum to 1
         """
         self.outgoing = [x / np.sum(x) for x in self.outgoing]
     
-    def receiveMessage(self, f, m):
+    def receive_message(self, f, m):
         """ Places new message into correct location in new message list
         """
         if self.enabled:
-            i = self.nbrs.index(f)
+            i = self.neighbors.index(f)
             self.incoming[i] = m
     
-    def sendMessages(self):
+    def send_messages(self):
         """ Sends all outgoing messages
         """
         for i in xrange(0, len(self.outgoing)):
-            self.nbrs[i].receiveMessage(self, self.outgoing[i])
+            self.neighbors[i].receive_message(self, self.outgoing[i])
     
-    def checkConvergence(self):
+    def check_convergence(self):
         """ Check if any messages have changed
         """
         if self.enabled:
             for i in xrange(0, len(self.outgoing)):
                 # check messages have same shape
-                self.oldoutgoing[i].shape = self.outgoing[i].shape
-                delta = np.absolute(self.outgoing[i] - self.oldoutgoing[i])
+                self.old_outgoing[i].shape = self.outgoing[i].shape
+                delta = np.absolute(self.outgoing[i] - self.old_outgoing[i])
                 if (delta > Node.epsilon).any(): # if there has been change
                     return False
             return True
@@ -87,7 +87,7 @@ class VarNode(Node):
         size = range(0, len(self.incoming))
         self.incoming = [np.ones((self.dim,1)) for i in size]
         self.outgoing = [np.ones((self.dim,1)) for i in size]
-        self.oldoutgoing = [np.ones((self.dim,1)) for i in size]
+        self.old_outgoing = [np.ones((self.dim,1)) for i in size]
         self.observed = -1
     
     def condition(self, observation):
@@ -97,18 +97,18 @@ class VarNode(Node):
         self.observed = observation
         # set messages (won't change)
         for i in xrange(0, len(self.outgoing)):
-            self.outgoing[i] = np.zeros((self.dim,1))
+            self.outgoing[i] = np.zeros((self.dim, 1))
             self.outgoing[i][self.observed] = 1.
-        self.nextStep() # copy into oldoutgoing
+        self.next_step() # copy into oldoutgoing
     
-    def prepMessages(self):
+    def prep_messages(self):
         """ Multiplies together incoming messages to make new outgoing
         """
         
         # compute new messages if no observation has been made
-        if self.enabled and self.observed < 0 and len(self.nbrs) > 1:
+        if self.enabled and self.observed < 0 and len(self.neighbors) > 1:
             # switch reference for old messages
-            self.nextStep()
+            self.next_step()
             for i in xrange(0, len(self.incoming)):
                 # multiply together all excluding message at current index
                 curr = self.incoming[:]
@@ -116,7 +116,7 @@ class VarNode(Node):
                 self.outgoing[i] = reduce(np.multiply, curr)
         
             # normalize once finished with all messages
-            self.normalizeMessages()
+            self.normalize_messages()
 
 class FacNode(Node):
     """ Factor node in factor graph
@@ -124,76 +124,76 @@ class FacNode(Node):
     def __init__(self, P, nid, *args):
         super(FacNode, self).__init__(nid)
         self.P = P
-        self.nbrs = list(args) # list storing refs to variable nodes
+        self.neighbors = list(args) # list storing refs to variable nodes
         
         # num of edges
-        numNbrs = len(self.nbrs)
-        numDependencies = self.P.squeeze().ndim
+        n_neighbors = len(self.neighbors)
+        n_dependencies = self.P.squeeze().ndim
         
         # init messages
-        for i in xrange(0,numNbrs):
-            v = self.nbrs[i]
+        for i in xrange(0, n_neighbors):
+            v = self.neighbors[i]
             vdim = v.dim
             
             # init for factor
-            self.incoming.append(np.ones((vdim,1)))
-            self.outgoing.append(np.ones((vdim,1)))
-            self.oldoutgoing.append(np.ones((vdim,1)))
+            self.incoming.append(np.ones((vdim, 1)))
+            self.outgoing.append(np.ones((vdim, 1)))
+            self.old_outgoing.append(np.ones((vdim, 1)))
             
             # init for variable
-            v.nbrs.append(self)
-            v.incoming.append(np.ones((vdim,1)))
-            v.outgoing.append(np.ones((vdim,1)))
-            v.oldoutgoing.append(np.ones((vdim,1)))
+            v.neighbors.append(self)
+            v.incoming.append(np.ones((vdim, 1)))
+            v.outgoing.append(np.ones((vdim, 1)))
+            v.old_outgoing.append(np.ones((vdim, 1)))
         
         # error check
-        assert (numNbrs == numDependencies), "Factor dimensions does not match size of domain."
+        assert (n_neighbors == n_dependencies), "Factor dimensions does not match size of domain."
     
     def reset(self):
         super(FacNode, self).reset()
         for i in xrange(0, len(self.incoming)):
-            self.incoming[i] = np.ones((self.nbrs[i].dim,1))
-            self.outgoing[i] = np.ones((self.nbrs[i].dim,1))
-            self.oldoutgoing[i] = np.ones((self.nbrs[i].dim,1))
+            self.incoming[i] = np.ones((self.neighbors[i].dim, 1))
+            self.outgoing[i] = np.ones((self.neighbors[i].dim, 1))
+            self.old_outgoing[i] = np.ones((self.neighbors[i].dim, 1))
     
-    def prepMessages(self):
+    def prep_messages(self):
         """ Multiplies incoming messages w/ P to make new outgoing
         """
         if self.enabled:
             # switch references for old messages
-            self.nextStep()
+            self.next_step()
         
-            mnum = len(self.incoming)
+            n_messages = len(self.incoming)
         
             # do tiling in advance
             # roll axes to match shape of newMessage after
-            for i in xrange(0,mnum):
+            for i in xrange(0, n_messages):
                 # find tiling size
-                nextShape = list(self.P.shape)
-                del nextShape[i]
-                nextShape.insert(0, 1)
+                next_shape = list(self.P.shape)
+                del next_shape[i]
+                next_shape.insert(0, 1)
                 # need to expand incoming message to correct num of dims to tile properly
-                prepShape = [1 for x in nextShape]
-                prepShape[0] = self.incoming[i].shape[0]
-                self.incoming[i].shape = prepShape
+                prep_shape = [1 for x in next_shape]
+                prep_shape[0] = self.incoming[i].shape[0]
+                self.incoming[i].shape = prep_shape
                 # tile and roll
-                self.incoming[i] = np.tile(self.incoming[i], nextShape)
+                self.incoming[i] = np.tile(self.incoming[i], next_shape)
                 self.incoming[i] = np.rollaxis(self.incoming[i], 0, i+1)
             
             # loop over subsets
-            for i in xrange(0, mnum):
+            for i in xrange(0, n_messages):
                 curr = self.incoming[:]
                 del curr[i]
-                newMessage = reduce(np.multiply, curr, self.P)
+                new_message = reduce(np.multiply, curr, self.P)
                     
                 # sum over all vars except i!
                 # roll axis i to front then sum over all other axes
-                newMessage = np.rollaxis(newMessage, i, 0)
-                newMessage = np.sum(newMessage, tuple(range(1,mnum)))
-                newMessage.shape = (newMessage.shape[0],1)
+                new_message = np.rollaxis(new_message, i, 0)
+                new_message = np.sum(new_message, tuple(range(1, n_messages)))
+                new_message.shape = (new_message.shape[0], 1)
                     
                 #store new message
-                self.outgoing[i] = newMessage
+                self.outgoing[i] = new_message
         
             # normalize once finished with all messages
-            self.normalizeMessages()
+            self.normalize_messages()
