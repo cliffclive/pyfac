@@ -9,6 +9,7 @@ import pdb
     Note to self: use %pdb and %load_ext autoreload followed by %autoreload 2
 """
 
+
 class Node(object):
     """ Superclass for graph nodes
     """
@@ -66,12 +67,13 @@ class Node(object):
                 # check messages have same shape
                 self.old_outgoing[i].shape = self.outgoing[i].shape
                 delta = np.absolute(self.outgoing[i] - self.old_outgoing[i])
-                if (delta > Node.epsilon).any(): # if there has been change
+                if (delta > Node.epsilon).any():  # if there has been change
                     return False
             return True
         else:
             # Always return True if disabled to avoid interrupting check
             return True
+
 
 class VarNode(Node):
     """ Variable node in factor graph
@@ -80,14 +82,14 @@ class VarNode(Node):
         super(VarNode, self).__init__(nid)
         self.name = name
         self.dim = dim
-        self.observed = -1 # only >= 0 if variable is observed
+        self.observed = -1  # only >= 0 if variable is observed
     
     def reset(self):
         super(VarNode, self).reset()
         size = range(0, len(self.incoming))
-        self.incoming = [np.ones((self.dim,1)) for i in size]
-        self.outgoing = [np.ones((self.dim,1)) for i in size]
-        self.old_outgoing = [np.ones((self.dim,1)) for i in size]
+        self.incoming = [np.ones((self.dim, 1)) for i in size]
+        self.outgoing = [np.ones((self.dim, 1)) for i in size]
+        self.old_outgoing = [np.ones((self.dim, 1)) for i in size]
         self.observed = -1
     
     def condition(self, observation):
@@ -99,7 +101,7 @@ class VarNode(Node):
         for i in xrange(0, len(self.outgoing)):
             self.outgoing[i] = np.zeros((self.dim, 1))
             self.outgoing[i][self.observed] = 1.
-        self.next_step() # copy into oldoutgoing
+        self.next_step()  # copy into old_outgoing
     
     def prep_messages(self):
         """ Multiplies together incoming messages to make new outgoing
@@ -118,13 +120,14 @@ class VarNode(Node):
             # normalize once finished with all messages
             self.normalize_messages()
 
+
 class FacNode(Node):
     """ Factor node in factor graph
     """
     def __init__(self, P, nid, *args):
         super(FacNode, self).__init__(nid)
         self.P = P
-        self.neighbors = list(args) # list storing refs to variable nodes
+        self.neighbors = list(args)  # list storing refs to variable nodes
         
         # num of edges
         n_neighbors = len(self.neighbors)

@@ -4,155 +4,160 @@ import numpy as np
 """ Graphs for testing sum product implementation
 """
 
-def checkEq(a,b):
+
+def check_eq(a, b):
     epsilon = 10**-6
     return abs(a-b) < epsilon
 
-def makeToyGraph():
+
+def make_toy_graph():
     """ Simple graph encoding, basic testing
         2 vars, 2 facs
         f_a, f_ba - p(a)p(a|b)
         factors functions are a little funny but it works
     """
-    G = Graph()
+    toy_graph = Graph()
     
-    a = G.addVarNode('a', 2)
-    b = G.addVarNode('b', 3)
+    a = toy_graph.add_var_node('a', 2)
+    b = toy_graph.add_var_node('b', 3)
     
     p = np.array([[0.3], [0.7]])
-    G.addFacNode(p, a)
+    toy_graph.add_fac_node(p, a)
     
     p = np.array([[0.2, 0.8], [0.4, 0.6], [0.1, 0.9]])
-    G.addFacNode(p, b, a)
+    toy_graph.add_fac_node(p, b, a)
     
-    return G
+    return toy_graph
 
-def testToyGraph():
+
+def test_toy_graph():
     """ Actual test case
     """
     
-    G = makeToyGraph()
-    marg = G.marginals()
-    brute = G.bruteForce()
+    toy_graph = make_toy_graph()
+    marginals = toy_graph.marginals()
+    brute = toy_graph.brute_force()
     
     # check the results
     # want to verify incoming messages
     # if vars are correct then factors must be as well
-    a = G.var['a'].incoming
-    assert checkEq(a[0][0], 0.3)
-    assert checkEq(a[0][1], 0.7)
-    assert checkEq(a[1][0], 0.23333333)
-    assert checkEq(a[1][1], 0.76666667)
+    a = toy_graph.var['a'].incoming
+    assert check_eq(a[0][0], 0.3)
+    assert check_eq(a[0][1], 0.7)
+    assert check_eq(a[1][0], 0.23333333)
+    assert check_eq(a[1][1], 0.76666667)
     
-    b = G.var['b'].incoming
-    assert checkEq(b[0][0], 0.34065934)
-    assert checkEq(b[0][1], 0.2967033)
-    assert checkEq(b[0][2], 0.36263736)
+    b = toy_graph.var['b'].incoming
+    assert check_eq(b[0][0], 0.34065934)
+    assert check_eq(b[0][1], 0.2967033)
+    assert check_eq(b[0][2], 0.36263736)
     
     # check the marginals
-    am = marg['a']
-    assert checkEq(am[0], 0.11538462)
-    assert checkEq(am[1], 0.88461538)
+    am = marginals['a']
+    assert check_eq(am[0], 0.11538462)
+    assert check_eq(am[1], 0.88461538)
     
-    bm = marg['b']
-    assert checkEq(bm[0], 0.34065934)
-    assert checkEq(bm[1], 0.2967033)
-    assert checkEq(bm[2], 0.36263736)
+    bm = marginals['b']
+    assert check_eq(bm[0], 0.34065934)
+    assert check_eq(bm[1], 0.2967033)
+    assert check_eq(bm[2], 0.36263736)
     
     # check brute force against sum-product
-    amm = G.marginalizeBrute(brute, 'a')
-    bmm = G.marginalizeBrute(brute, 'b')
-    assert checkEq(am[0], amm[0])
-    assert checkEq(am[1], amm[1])
-    assert checkEq(bm[0], bmm[0])
-    assert checkEq(bm[1], bmm[1])
-    assert checkEq(bm[2], bmm[2])
+    amm = toy_graph.marginalize_brute(brute, 'a')
+    bmm = toy_graph.marginalize_brute(brute, 'b')
+    assert check_eq(am[0], amm[0])
+    assert check_eq(am[1], amm[1])
+    assert check_eq(bm[0], bmm[0])
+    assert check_eq(bm[1], bmm[1])
+    assert check_eq(bm[2], bmm[2])
     
     print "All tests passed!"
 
-def makeTestGraph():
+
+def make_test_graph():
     """ Graph for HW problem 1.c.
         4 vars, 3 facs
         f_a, f_ba, f_dca
     """
-    G = Graph()
+    test_graph = Graph()
     
-    a = G.addVarNode('a', 2)
-    b = G.addVarNode('b', 3)
-    c = G.addVarNode('c', 4)
-    d = G.addVarNode('d', 5)
+    a = test_graph.add_var_node('a', 2)
+    b = test_graph.add_var_node('b', 3)
+    c = test_graph.add_var_node('c', 4)
+    d = test_graph.add_var_node('d', 5)
     
     p = np.array([[0.3], [0.7]])
-    G.addFacNode(p, a)
+    test_graph.add_fac_node(p, a)
     
     p = np.array([[0.2, 0.8], [0.4, 0.6], [0.1, 0.9]])
-    G.addFacNode(p, b, a)
+    test_graph.add_fac_node(p, b, a)
     
-    p = np.array([ [[3., 1.], [1.2, 0.4], [0.1, 0.9], [0.1, 0.9]], [[11., 9.], [8.8, 9.4], [6.4, 0.1], [8.8, 9.4]], [[3., 2.], [2., 2.], [2., 2.], [3., 2.]], [[0.3, 0.7], [0.44, 0.56], [0.37, 0.63], [0.44, 0.56]], [[0.2, 0.1], [0.64, 0.44], [0.37, 0.63], [0.2, 0.1]] ])
-    G.addFacNode(p, d, c, a)
+    p = np.array([[[3., 1.], [1.2, 0.4], [0.1, 0.9], [0.1, 0.9]],
+                  [[11., 9.], [8.8, 9.4], [6.4, 0.1], [8.8, 9.4]],
+                  [[3., 2.], [2., 2.], [2., 2.], [3., 2.]],
+                  [[0.3, 0.7], [0.44, 0.56], [0.37, 0.63], [0.44, 0.56]],
+                  [[0.2, 0.1], [0.64, 0.44], [0.37, 0.63], [0.2, 0.1]]])
+    test_graph.add_fac_node(p, d, c, a)
     
-    # add a loop - not a part of 1.c., just for testing
-    # p = np.array([[0.3, 0.2214532], [0.1, 0.4] , [0.33333, 0.76], [0.1, 0.98]])
-#     G.addFacNode(p, c, a)
-    
-    return G
+    return test_graph
 
-def testTestGraph():
+
+def test_test_graph():
     """ Automated test case
     """
-    G = makeTestGraph()
-    marg = G.marginals()
-    brute = G.bruteForce()
+    test_graph = make_test_graph()
+    marginals = test_graph.marginals()
+    brute = test_graph.brute_force()
     
     # check the marginals
-    am = marg['a']
-    assert checkEq(am[0], 0.13755539)
-    assert checkEq(am[1], 0.86244461)
+    am = marginals['a']
+    assert check_eq(am[0], 0.13755539)
+    assert check_eq(am[1], 0.86244461)
     
-    bm = marg['b']
-    assert checkEq(bm[0], 0.33928227)
-    assert checkEq(bm[1], 0.30358863)
-    assert checkEq(bm[2], 0.3571291)
+    bm = marginals['b']
+    assert check_eq(bm[0], 0.33928227)
+    assert check_eq(bm[1], 0.30358863)
+    assert check_eq(bm[2], 0.3571291)
     
-    cm = marg['c']
-    assert checkEq(cm[0], 0.30378128)
-    assert checkEq(cm[1], 0.29216947)
-    assert checkEq(cm[2], 0.11007584)
-    assert checkEq(cm[3], 0.29397341)
+    cm = marginals['c']
+    assert check_eq(cm[0], 0.30378128)
+    assert check_eq(cm[1], 0.29216947)
+    assert check_eq(cm[2], 0.11007584)
+    assert check_eq(cm[3], 0.29397341)
     
-    dm = marg['d']
-    assert checkEq(dm[0], 0.076011)
-    assert checkEq(dm[1], 0.65388724)
-    assert checkEq(dm[2], 0.18740039)
-    assert checkEq(dm[3], 0.05341787)
-    assert checkEq(dm[4], 0.0292835)
+    dm = marginals['d']
+    assert check_eq(dm[0], 0.076011)
+    assert check_eq(dm[1], 0.65388724)
+    assert check_eq(dm[2], 0.18740039)
+    assert check_eq(dm[3], 0.05341787)
+    assert check_eq(dm[4], 0.0292835)
     
     # check brute force against sum-product
-    amm = G.marginalizeBrute(brute, 'a')
-    bmm = G.marginalizeBrute(brute, 'b')
-    cmm = G.marginalizeBrute(brute, 'c')
-    dmm = G.marginalizeBrute(brute, 'd')
+    amm = test_graph.marginalize_brute(brute, 'a')
+    bmm = test_graph.marginalize_brute(brute, 'b')
+    cmm = test_graph.marginalize_brute(brute, 'c')
+    dmm = test_graph.marginalize_brute(brute, 'd')
     
-    assert checkEq(am[0], amm[0])
-    assert checkEq(am[1], amm[1])
+    assert check_eq(am[0], amm[0])
+    assert check_eq(am[1], amm[1])
     
-    assert checkEq(bm[0], bmm[0])
-    assert checkEq(bm[1], bmm[1])
-    assert checkEq(bm[2], bmm[2])
+    assert check_eq(bm[0], bmm[0])
+    assert check_eq(bm[1], bmm[1])
+    assert check_eq(bm[2], bmm[2])
     
-    assert checkEq(cm[0], cmm[0])
-    assert checkEq(cm[1], cmm[1])
-    assert checkEq(cm[2], cmm[2])
-    assert checkEq(cm[3], cmm[3])
+    assert check_eq(cm[0], cmm[0])
+    assert check_eq(cm[1], cmm[1])
+    assert check_eq(cm[2], cmm[2])
+    assert check_eq(cm[3], cmm[3])
     
-    assert checkEq(dm[0], dmm[0])
-    assert checkEq(dm[1], dmm[1])
-    assert checkEq(dm[2], dmm[2])
-    assert checkEq(dm[3], dmm[3])
-    assert checkEq(dm[4], dmm[4])
+    assert check_eq(dm[0], dmm[0])
+    assert check_eq(dm[1], dmm[1])
+    assert check_eq(dm[2], dmm[2])
+    assert check_eq(dm[3], dmm[3])
+    assert check_eq(dm[4], dmm[4])
     
     print "All tests passed!"
     
 # standard run of test cases
-testToyGraph()
-testTestGraph()
+test_toy_graph()
+test_test_graph()
