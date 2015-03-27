@@ -36,7 +36,7 @@ class Node(object):
             n.enabled = True
     
     def next_step(self):
-        """ Used to have this line in prepMessages
+        """ Used to have this line in prep_messages
             but it didn't work?
         """
         self.old_outgoing = self.outgoing[:]
@@ -46,12 +46,12 @@ class Node(object):
         """
         self.outgoing = [x / np.sum(x) for x in self.outgoing]
     
-    def receive_message(self, f, m):
+    def receive_message(self, node, message):
         """ Places new message into correct location in new message list
         """
         if self.enabled:
-            i = self.neighbors.index(f)
-            self.incoming[i] = m
+            i = self.neighbors.index(node)
+            self.incoming[i] = message
     
     def send_messages(self):
         """ Sends all outgoing messages
@@ -106,7 +106,6 @@ class VarNode(Node):
     def prep_messages(self):
         """ Multiplies together incoming messages to make new outgoing
         """
-        
         # compute new messages if no observation has been made
         if self.enabled and self.observed < 0 and len(self.neighbors) > 1:
             # switch reference for old messages
@@ -142,7 +141,8 @@ class FacNode(Node):
             self.incoming.append(np.ones((vdim, 1)))
             self.outgoing.append(np.ones((vdim, 1)))
             self.old_outgoing.append(np.ones((vdim, 1)))
-            
+
+            # TODO: do this in an add_neighbor function in the VarNode class!
             # init for variable
             v.neighbors.append(self)
             v.incoming.append(np.ones((vdim, 1)))

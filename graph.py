@@ -70,23 +70,23 @@ class Graph:
             for f in self.fac:
                 # start with factor-to-variable
                 # can send immediately since not sending to any other factors
-                f.prepMessages()
-                f.sendMessages()
+                f.prep_messages()
+                f.send_messages()
             
             for k, v in self.var.iteritems():
                 # variable-to-factor
-                v.prepMessages()
-                v.sendMessages()
+                v.prep_messages()
+                v.send_messages()
             
             # check for convergence
             t = True
             for k, v in self.var.iteritems():
-                t = t and v.checkConvergence()
+                t = t and v.check_convergence()
                 if not t:
                     break
             if t:        
                 for f in self.fac:
-                    t = t and f.checkConvergence()
+                    t = t and f.check_convergence()
                     if not t:
                         break
             
@@ -181,10 +181,10 @@ class Graph:
             # compute value for current configuration
             potential = 1.
             for f in self.fac:
-                if f.enabled and False not in [x.enabled for x in f.nbrs]:
+                if f.enabled and False not in [x.enabled for x in f.neighbors]:
                     # figure out which vars are part of factor
                     # then get current values of those vars in correct order
-                    args = [current_state[enabled_nids.index(x.nid)] for x in f.nbrs]
+                    args = [current_state[enabled_nids.index(x.nid)] for x in f.neighbors]
                 
                     # get value and multiply in
                     potential = potential * f.P[tuple(args)]
